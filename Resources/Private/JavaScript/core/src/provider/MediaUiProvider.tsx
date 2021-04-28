@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { createContext, useCallback, useContext } from 'react';
+import { createContext, useCallback, useContext, useEffect } from 'react';
 
 import { useIntl } from '@media-ui/core/src';
 
 import { Asset, FeatureFlags } from '../interfaces';
-import { useAssetsQuery, useDeleteAsset, useEvent, useImportAsset } from '../hooks';
+import { useAssetsQuery, useChangedAssetsQuery, useDeleteAsset, useEvent, useImportAsset } from '../hooks';
 import { useNotify } from './Notify';
 import { assetDeletedEvent } from '../events';
 
@@ -45,6 +45,13 @@ export function MediaUiProvider({
     const { importAsset } = useImportAsset();
     const { assets, refetch: refetchAssets } = useAssetsQuery();
     const assetDeleted = useEvent(assetDeletedEvent);
+    const changedAssets = useChangedAssetsQuery();
+
+    useEffect(() => {
+        changedAssets?.forEach((change) => {
+            console.log(change, 'a change occured on the server');
+        });
+    }, [changedAssets]);
 
     const handleDeleteAsset = useCallback(
         (asset: Asset): Promise<boolean> => {

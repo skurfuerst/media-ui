@@ -3,6 +3,7 @@ import useAssetCountQuery from './useAssetCountQuery';
 import useAssetQuery from './useAssetQuery';
 import useAssetSourcesQuery from './useAssetSourcesQuery';
 import useAssetsQuery from './useAssetsQuery';
+import useChangedAssetsQuery from './useChangedAssetsQuery';
 import useConfigQuery from './useConfigQuery';
 import useCreateAssetCollection from './useCreateAssetCollection';
 import useCreateTag from './useCreateTag';
@@ -34,6 +35,7 @@ export {
     useAssetQuery,
     useAssetSourcesQuery,
     useAssetsQuery,
+    useChangedAssetsQuery,
     useConfigQuery,
     useCreateAssetCollection,
     useCreateTag,

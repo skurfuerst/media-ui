@@ -4,6 +4,7 @@ import ASSET_COLLECTION from './assetCollection';
 import ASSET_COLLECTIONS from './assetCollections';
 import ASSET_COUNT from './assetCount';
 import ASSET_SOURCES from './assetSources';
+import CHANGED_ASSETS from './changedAssets';
 import CONFIG from './config';
 import TAG from './tag';
 import TAGS from './tags';
@@ -16,6 +17,7 @@ export {
     ASSET_COLLECTIONS,
     ASSET_COUNT,
     ASSET_SOURCES,
+    CHANGED_ASSETS,
     CONFIG,
     SELECTED_ASSET_SOURCE_ID,
     SET_SELECTED_ASSET_SOURCE_ID,
