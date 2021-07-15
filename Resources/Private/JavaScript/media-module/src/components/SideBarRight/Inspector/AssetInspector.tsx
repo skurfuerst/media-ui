@@ -24,6 +24,22 @@ const useStyles = createUseMediaUiStyles((theme: MediaUiTheme) => ({
     },
 }));
 
+const decodeLocalizedValue = (any: any|null) => {
+    if (any === null || any.trim() === "") {
+        return {
+            de: "",
+            en: ""
+        }
+    }
+    if (!any.trim().startsWith("{")) {
+        return {
+            de: any.trim(),
+            en: ""
+        }
+    }
+    return JSON.parse(any);
+}
+
 const AssetInspector = () => {
     const classes = useStyles();
     const selectedAsset = useSelectedAsset();
@@ -32,37 +48,47 @@ const AssetInspector = () => {
     const { featureFlags } = useMediaUi();
     const [label, setLabel] = useState<string>(null);
     const [caption, setCaption] = useState<string>(null);
+    const [captionEn, setCaptionEn] = useState<string>(null);
     const [copyrightNotice, setCopyrightNotice] = useState<string>(null);
+    const [copyrightNoticeEn, setCopyrightNoticeEn] = useState<string>(null);
     const selectedInspectorView = useRecoilValue(selectedInspectorViewState);
 
     const { updateAsset, loading } = useUpdateAsset();
 
     const isEditable = selectedAsset?.localId && !loading;
+    const captionJson = decodeLocalizedValue(selectedAsset !== null ? selectedAsset.caption : null);
+    const copyrightJson = decodeLocalizedValue(selectedAsset !== null ? selectedAsset.copyrightNotice : null);
     const hasUnpublishedChanges =
         selectedAsset &&
         (label !== selectedAsset.label ||
-            caption !== selectedAsset.caption ||
-            copyrightNotice !== selectedAsset.copyrightNotice);
+            caption !== captionJson.de ||
+            captionEn !== captionJson.en ||
+            copyrightNotice !== copyrightJson.de ||
+            copyrightNoticeEn !== copyrightJson.en);
 
     const handleDiscard = useCallback(() => {
         if (selectedAsset) {
             setLabel(selectedAsset.label);
-            setCaption(selectedAsset.caption);
-            setCopyrightNotice(selectedAsset.copyrightNotice);
+            setCaption(captionJson.de);
+            setCaptionEn(captionJson.en);
+            setCopyrightNotice(copyrightJson.de);
+            setCopyrightNoticeEn(copyrightJson.en);
         }
-    }, [selectedAsset, setLabel, setCaption, setCopyrightNotice]);
+    }, [selectedAsset, setLabel, setCaption, setCaptionEn, setCopyrightNotice, setCopyrightNoticeEn]);
 
     const handleApply = useCallback(() => {
         if (
             label !== selectedAsset.label ||
-            caption !== selectedAsset.caption ||
-            copyrightNotice !== selectedAsset.copyrightNotice
+            caption !== captionJson.de ||
+            captionEn !== captionJson.en ||
+            copyrightNotice !== copyrightJson.de ||
+            copyrightNoticeEn !== copyrightJson.en
         ) {
             updateAsset({
                 asset: selectedAsset,
                 label,
-                caption,
-                copyrightNotice,
+                caption: JSON.stringify({de: caption, en: captionEn}),
+                copyrightNotice: JSON.stringify({de: copyrightNotice, en: copyrightNoticeEn}),
             })
                 .then(() => {
                     Notify.ok(translate('actions.updateAsset.success', 'The asset has been updated'));
@@ -101,6 +127,16 @@ const AssetInspector = () => {
                     onChange={setCaption}
                 />
             </Property>
+            <Property label='Caption (en)'>
+                <TextArea
+                    className={classes.textArea}
+                    disabled={!isEditable}
+                    minRows={3}
+                    expandedRows={6}
+                    value={captionEn || ''}
+                    onChange={setCaptionEn}
+                />
+            </Property>
             <Property label={translate('inspector.copyrightNotice', 'Copyright notice')}>
                 <TextArea
                     className={classes.textArea}
@@ -109,6 +145,16 @@ const AssetInspector = () => {
                     expandedRows={4}
                     value={copyrightNotice || ''}
                     onChange={setCopyrightNotice}
+                />
+            </Property>
+            <Property label="Copyright notice (en)">
+                <TextArea
+                    className={classes.textArea}
+                    disabled={!isEditable}
+                    minRows={2}
+                    expandedRows={4}
+                    value={copyrightNoticeEn || ''}
+                    onChange={setCopyrightNoticeEn}
                 />
             </Property>
 
