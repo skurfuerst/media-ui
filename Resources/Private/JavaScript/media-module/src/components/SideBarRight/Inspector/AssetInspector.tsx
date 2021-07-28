@@ -27,17 +27,27 @@ const useStyles = createUseMediaUiStyles((theme: MediaUiTheme) => ({
 const decodeLocalizedValue = (any: any|null) => {
     if (any === null || any.trim() === "") {
         return {
-            de: "",
-            en: ""
+            labelEn: "",
+            captionDe: "",
+            captionEn: ""
         }
     }
     if (!any.trim().startsWith("{")) {
         return {
-            de: any.trim(),
-            en: ""
+            labelEn: "",
+            captionDe: any.trim(),
+            captionEn: ""
         }
     }
-    return JSON.parse(any);
+    const obj = JSON.parse(any);
+    if (!obj.hasOwnProperty('de')) {
+        return obj;
+    }
+    return {
+        labelEn: "",
+        captionDe: obj.de,
+        captionEn: obj.en,
+    }
 }
 
 const AssetInspector = () => {
@@ -47,48 +57,47 @@ const AssetInspector = () => {
     const { translate } = useIntl();
     const { featureFlags } = useMediaUi();
     const [label, setLabel] = useState<string>(null);
+    const [labelEn, setLabelEn] = useState<string>(null);
     const [caption, setCaption] = useState<string>(null);
     const [captionEn, setCaptionEn] = useState<string>(null);
     const [copyrightNotice, setCopyrightNotice] = useState<string>(null);
-    const [copyrightNoticeEn, setCopyrightNoticeEn] = useState<string>(null);
     const selectedInspectorView = useRecoilValue(selectedInspectorViewState);
 
     const { updateAsset, loading } = useUpdateAsset();
 
     const isEditable = selectedAsset?.localId && !loading;
-    const captionJson = decodeLocalizedValue(selectedAsset !== null ? selectedAsset.caption : null);
-    const copyrightJson = decodeLocalizedValue(selectedAsset !== null ? selectedAsset.copyrightNotice : null);
+    const captionAndEnTitleJson = decodeLocalizedValue(selectedAsset !== null ? selectedAsset.caption : null);
     const hasUnpublishedChanges =
         selectedAsset &&
         (label !== selectedAsset.label ||
-            caption !== captionJson.de ||
-            captionEn !== captionJson.en ||
-            copyrightNotice !== copyrightJson.de ||
-            copyrightNoticeEn !== copyrightJson.en);
+            labelEn !== captionAndEnTitleJson.labelEn ||
+            caption !== captionAndEnTitleJson.captionDe ||
+            captionEn !== captionAndEnTitleJson.captionEn ||
+            copyrightNotice !== selectedAsset.copyrightNotice);
 
     const handleDiscard = useCallback(() => {
         if (selectedAsset) {
             setLabel(selectedAsset.label);
-            setCaption(captionJson.de);
-            setCaptionEn(captionJson.en);
-            setCopyrightNotice(copyrightJson.de);
-            setCopyrightNoticeEn(copyrightJson.en);
+            setLabelEn(captionAndEnTitleJson.labelEn);
+            setCaption(captionAndEnTitleJson.captionDe);
+            setCaptionEn(captionAndEnTitleJson.captionEn);
+            setCopyrightNotice(selectedAsset.copyrightNotice);
         }
-    }, [selectedAsset, setLabel, setCaption, setCaptionEn, setCopyrightNotice, setCopyrightNoticeEn]);
+    }, [selectedAsset, setLabel, setLabelEn, setCaption, setCaptionEn, setCopyrightNotice]);
 
     const handleApply = useCallback(() => {
         if (
             label !== selectedAsset.label ||
-            caption !== captionJson.de ||
-            captionEn !== captionJson.en ||
-            copyrightNotice !== copyrightJson.de ||
-            copyrightNoticeEn !== copyrightJson.en
+            labelEn !== captionAndEnTitleJson.labelEn ||
+            caption !== captionAndEnTitleJson.captionDe ||
+            captionEn !== captionAndEnTitleJson.captionEn ||
+            copyrightNotice !== selectedAsset.copyrightNotice
         ) {
             updateAsset({
                 asset: selectedAsset,
-                label,
-                caption: JSON.stringify({de: caption, en: captionEn}),
-                copyrightNotice: JSON.stringify({de: copyrightNotice, en: copyrightNoticeEn}),
+                label: label,
+                caption: JSON.stringify({captionDe: caption, captionEn: captionEn, labelEn: labelEn}),
+                copyrightNotice: copyrightNotice,
             })
                 .then(() => {
                     Notify.ok(translate('actions.updateAsset.success', 'The asset has been updated'));
@@ -97,7 +106,7 @@ const AssetInspector = () => {
                     Notify.error(translate('actions.deleteAsset.error', 'Error while updating the asset'), message);
                 });
         }
-    }, [Notify, translate, caption, copyrightNotice, label, selectedAsset, updateAsset]);
+    }, [Notify, translate, caption, captionEn, copyrightNotice, label, labelEn, selectedAsset, updateAsset]);
 
     useEffect(() => {
         handleDiscard();
@@ -114,6 +123,15 @@ const AssetInspector = () => {
                     type="text"
                     value={label || ''}
                     onChange={setLabel}
+                    onEnterKey={handleApply}
+                />
+            </Property>
+            <Property label='Title (en)'>
+                <TextInput
+                    disabled={!isEditable}
+                    type="text"
+                    value={labelEn || ''}
+                    onChange={setLabelEn}
                     onEnterKey={handleApply}
                 />
             </Property>
@@ -145,16 +163,6 @@ const AssetInspector = () => {
                     expandedRows={4}
                     value={copyrightNotice || ''}
                     onChange={setCopyrightNotice}
-                />
-            </Property>
-            <Property label="Copyright notice (en)">
-                <TextArea
-                    className={classes.textArea}
-                    disabled={!isEditable}
-                    minRows={2}
-                    expandedRows={4}
-                    value={copyrightNoticeEn || ''}
-                    onChange={setCopyrightNoticeEn}
                 />
             </Property>
 
